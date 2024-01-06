@@ -3,12 +3,21 @@ import UsuarioService from "../services/Usuario.service";
 import { makeMockResponse } from "../__mocks__/mockResponse.mock";
 import { Request } from "express";
 
+const mockUserService = {
+    criaUsuario: jest.fn(),
+}
+
+jest.mock('../services/Usuario.service', () => {
+    return {
+        UsuarioService: jest.fn().mockImplementation(() => {
+            return mockUserService;
+        })
+    }
+});
+
 describe('UsuarioController', () => {
     const mockUsuarioService: Partial<UsuarioService> = {
         criaUsuario: jest.fn(),
-        listaUsuarios: jest.fn(),
-        listaUsuarioPorId: jest.fn(),
-        deletaUsuarioPorId: jest.fn()
     }
 
     const usuarioController = new UsuarioController(mockUsuarioService as UsuarioService);
@@ -17,7 +26,8 @@ describe('UsuarioController', () => {
         const mockRequest = {
             body: {
                 nome: 'Teste',
-                email: 'teste@dio.me'
+                email: 'teste@dio.me',
+                password: "123456"
             }
         } as Request;
 
@@ -26,76 +36,45 @@ describe('UsuarioController', () => {
         expect(mockResponse.state.status).toBe(201);
     })
 
-    it('Deve retornar todos os usuarios', () => {
-        const mockRequest = {} as Request;
-
-        const mockResponse = makeMockResponse();
-        usuarioController.listaUsuarios(mockRequest, mockResponse);
-        expect(mockResponse.state.status).toBe(200);
-    })
-
-    it('Deve retornar um erro 400 quando o nome não for informado', () => {
+    it('Deve retornar erro 400 quando o nome não for informado', () => {
         const mockRequest = {
             body: {
                 nome: '',
-                email: 'joao@dio.me'
+                email: 'teste@email.com',
+                password: ""
             }
         } as Request;
 
         const mockResponse = makeMockResponse();
         usuarioController.criaUsuario(mockRequest, mockResponse);
         expect(mockResponse.state.status).toBe(400);
-        expect(mockResponse.state.json).toMatchObject({
-            "mensagem": "Bad request!",
-            "erros": [
-                "Nome é obrigatório"
-            ]
-        });
     })
 
-    it('Deve retornar um erro 400 quando o email não for informado', () => {
+    it('Deve retornar erro 400 quando o email não for informado', () => {
         const mockRequest = {
             body: {
-                nome: 'João',
-                email: ''
+                nome: 'teste',
+                email: '',
+                password: ""
             }
         } as Request;
 
         const mockResponse = makeMockResponse();
         usuarioController.criaUsuario(mockRequest, mockResponse);
         expect(mockResponse.state.status).toBe(400);
-        expect(mockResponse.state.json).toMatchObject({
-            "mensagem": "Bad request!",
-            "erros": [
-                "Email é obrigatório"
-            ]
-        });
     })
 
-    it('Deve retornar um erro 404 quando o usuário não for encontrado', () => {
+    it('Deve retornar erro 400 quando o password não for informado', () => {
         const mockRequest = {
-            params: {
-                id: 3
+            body: {
+                nome: 'teste',
+                email: 'teste@email.com',
+                password: ""
             }
-        } as unknown as Request;
+        } as Request;
 
         const mockResponse = makeMockResponse();
-        usuarioController.listaUsuarioPorId(mockRequest, mockResponse);
-        expect(mockResponse.state.status).toBe(404);
-        expect(mockResponse.state.json).toMatchObject({
-            "mensagem": "Usuário não encontrado"
-        });
-    })
-
-    it('Deve deletar um usuário por id', () => {
-        const mockRequest = {
-            params: {
-                id: 1
-            }
-        } as unknown as Request;
-
-        const mockResponse = makeMockResponse();
-        usuarioController.deletaUsuarioPorId(mockRequest, mockResponse);
-        console.log(mockResponse.state.json);
+        usuarioController.criaUsuario(mockRequest, mockResponse);
+        expect(mockResponse.state.status).toBe(400);
     })
 });

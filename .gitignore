@@ -17,3 +17,10 @@ dist/
 # Ignore OS-specific files
 .DS_Store
 Thumbs.db
+
+# Ignore compiled files
+*.min.js
+*.min.css
+
+# Ignore database files
+*.sqlite

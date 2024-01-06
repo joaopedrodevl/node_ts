@@ -1,67 +1,63 @@
-interface IUsuario {
-    nome: string,
-    email: string,
-    id: number
-}
-
-const db: Array<IUsuario> = [
-    {
-        id: 1,
-        nome: "João",
-        email: "joao@email.com"
-    },
-    {
-        id: 2,
-        nome: "Maria",
-        email: "maria@email.com"
-    },
-];
+import { sign } from "jsonwebtoken";
+import { AppDataSource } from "../database";
+import { User } from "../entitites/User";
+import { UserRepository } from "../repositories/User.repository";
 
 class UsuarioService {
-    private db: Array<IUsuario>;
+    private userRepository: UserRepository;
 
-    constructor(database = db) {
-        this.db = database;
+    constructor(userRepository: UserRepository = new UserRepository(AppDataSource.manager)) {
+        this.userRepository = userRepository;
     }
 
-    criaUsuario = (nome: string, email: string): IUsuario => {
-        const id = db.length + 1;
-        
-        const usuario: IUsuario = {
-            id,
-            nome,
-            email
-        };
-
-        this.db.push(usuario);
-        return usuario;
+    criaUsuario = (nome: string, email: string, password: string): Promise<User> => {
+        const user = new User(nome, email, password);
+        return this.userRepository.createUser(user);
     }
 
-    listaUsuarios = (): Array<IUsuario> => {
-        return this.db;
+    listaUsuarios = async () => {
+        return await this.userRepository.getAllUser();
     }
 
-    listaUsuarioPorId = (id: number): IUsuario | boolean => {
-        const usuario = db.find(usuario => usuario.id === id);
-        if (!usuario) {
-            return false;
+    listaUsuarioPorId = async (id: string): Promise<User | null> => {
+        try {
+            return await this.userRepository.getUser(id);
+        } catch (error) {
+            return null;
         }
-
-        return usuario;
     }
 
-    deletaUsuarioPorId = (id: number): boolean | IUsuario => {
-        const usuario = db.find(usuario => usuario.id === id);
-        if (!usuario) {
-            return false;
+    getAuthUser = async (email: string, password: string): Promise<any> => {
+        return await this.userRepository.getUserByEmailAndPassword(email, password);
+    }
+
+    getToken = async (email: string, password: string): Promise<any> => {
+        try {
+            const user = await this.getAuthUser(email, password);
+
+            if (!user) {
+                return null;
+            }
+
+            const tokenData = {
+                name: user.name,
+                email: user.email
+            }
+
+            const tokenKey = '748923897hjhg3u1y2GHG8y23g3'
+
+            const tokenOptions = {
+                subject: user.id_user,
+                expiresIn: '1d'
+            }
+
+            const token = sign(tokenData, tokenKey, tokenOptions)
+
+            return token;
+        } catch (error) {
+            return null;
         }
-
-        const index = db.indexOf(usuario);
-        db.splice(index, 1);
-
-        return usuario;
     }
 }
 
 export default UsuarioService;
-export type { IUsuario };
